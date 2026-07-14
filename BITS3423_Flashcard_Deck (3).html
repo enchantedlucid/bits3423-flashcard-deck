@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BITS3423 — Clearance Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0a0e17;
+  --navy2:#0f1626;
+  --grid:#161f33;
+  --paper:#eae5d6;
+  --paper2:#dcd5bf;
+  --ink:#221f16;
+  --ink-soft:#5b5747;
+  --term-bg:#061a12;
+  --term-line:#0d2b1e;
+  --term-green:#5df2a3;
+  --term-green-dim:#2e8a5e;
+  --amber:#ffb100;
+  --blue:#3aa0ff;
+  --red:#ff5c5c;
+  --purple:#b98bff;
+  --green:#4fd18b;
+  --orange:#ff9e4a;
+  --cyan:#3ddbd9;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  background:
+    radial-gradient(circle at 20% 10%, #101a2e 0%, transparent 45%),
+    radial-gradient(circle at 85% 90%, #0d1a2a 0%, transparent 40%),
+    var(--navy);
+  background-attachment:fixed;
+  font-family:'IBM Plex Sans',sans-serif;
+  color:var(--paper);
+  min-height:100vh;
+  min-height:100svh;
+  padding:20px 14px 40px;
+  overflow-x:hidden;
+}
+.bg-grid{
+  position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size:42px 42px;
+  opacity:0.35;
+}
+.wrap{max-width:760px;margin:0 auto;}
+
+header.top{text-align:center;margin-bottom:22px;}
+.eyebrow{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  letter-spacing:3px;
+  color:var(--term-green-dim);
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+h1{
+  font-family:'JetBrains Mono',monospace;
+  font-size:26px;
+  font-weight:800;
+  letter-spacing:0.5px;
+  margin:0 0 6px;
+  color:#f3efe0;
+}
+.sub{
+  font-size:13.5px;
+  color:#8b93a8;
+  max-width:520px;
+  margin:0 auto;
+  line-height:1.5;
+}
+
+.controls{
+  display:flex; flex-wrap:wrap; gap:8px;
+  justify-content:center;
+  margin:22px 0 6px;
+}
+.chip{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11.5px;
+  letter-spacing:0.5px;
+  padding:7px 13px;
+  border-radius:3px;
+  border:1px solid #2a3550;
+  background:#111a2c;
+  color:#9aa5bd;
+  cursor:pointer;
+  user-select:none;
+  transition:all .15s ease;
+  text-transform:uppercase;
+}
+.chip:hover{border-color:#4a5a80;color:#dbe2f0;}
+.chip.active{
+  color:var(--navy);
+  border-color:transparent;
+  font-weight:700;
+}
+.chip[data-cat="all"].active{background:#e8e4d8;}
+.chip[data-cat="past"].active{background:var(--blue);}
+.chip[data-cat="mcq"].active{background:var(--red);}
+.chip[data-cat="short"].active{background:var(--green);}
+.chip[data-cat="struct"].active{background:var(--purple);}
+.chip[data-cat="case"].active{background:var(--orange);}
+.chip[data-cat="book"].active{background:var(--cyan);}
+
+.status-row{
+  display:flex; align-items:center; justify-content:space-between;
+  max-width:520px; margin:18px auto 10px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:11.5px;
+  color:#78839c;
+}
+.progress-track{
+  flex:1; height:4px; margin:0 12px; background:#182238; border-radius:2px; overflow:hidden;
+}
+.progress-fill{height:100%; background:var(--term-green); width:0%; transition:width .25s ease;}
+
+.stage{
+  perspective:1800px;
+  max-width:520px;
+  margin:0 auto;
+  height:400px;
+  height:min(400px, 58svh);
+  min-height:320px;
+}
+.card{
+  position:relative; width:100%; height:100%;
+  transform-style:preserve-3d;
+  transition:transform .55s cubic-bezier(.4,.2,.2,1);
+  cursor:pointer;
+  touch-action:manipulation;
+}
+.card.flipped{transform:rotateY(180deg);}
+.face{
+  position:absolute; inset:0;
+  border-radius:10px;
+  backface-visibility:hidden;
+  overflow:hidden;
+  display:flex; flex-direction:column;
+  box-shadow:0 18px 40px rgba(0,0,0,0.45);
+}
+
+.front{
+  background:var(--paper);
+  color:var(--ink);
+  border:1px solid #c8c0a4;
+}
+.stripe{
+  height:10px; width:100%;
+  background:var(--stripe-color, var(--blue));
+}
+.front-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 20px 0;
+  font-family:'JetBrains Mono',monospace;
+}
+.cat-label{
+  font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--ink-soft);
+  font-weight:700;
+}
+.marks-badge{
+  font-size:10.5px; letter-spacing:0.5px;
+  padding:3px 9px; border-radius:2px;
+  background:rgba(0,0,0,0.08);
+  color:var(--ink-soft);
+}
+.watermark{
+  position:absolute; right:14px; top:56px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:9.5px; letter-spacing:2px;
+  color:rgba(0,0,0,0.14);
+  transform:rotate(6deg);
+  font-weight:800;
+}
+.front-body{
+  flex:1; padding:14px 22px 20px; overflow-y:auto;
+  display:flex; flex-direction:column; justify-content:center;
+}
+.front-body .tag{
+  font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:1px;
+  color:var(--ink-soft); margin-bottom:8px; text-transform:uppercase;
+}
+.qtext{
+  font-size:16.5px; line-height:1.5; font-weight:500;
+}
+.opts{
+  margin-top:12px; font-size:13.5px; line-height:1.85; color:#3a3626;
+}
+.opts div{padding-left:2px;}
+.front-foot{
+  padding:10px 20px 16px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; letter-spacing:1px; color:#9c9578;
+  text-align:center;
+}
+
+.back{
+  background:var(--term-bg);
+  color:var(--term-green);
+  transform:rotateY(180deg);
+  border:1px solid #0f3625;
+}
+.back::before{
+  content:"";
+  position:absolute; inset:0;
+  background:repeating-linear-gradient(0deg, rgba(93,242,163,0.025) 0px, rgba(93,242,163,0.025) 1px, transparent 1px, transparent 3px);
+  pointer-events:none;
+}
+.back-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 18px; border-bottom:1px solid var(--term-line);
+  font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:1.5px;
+}
+.stamp{
+  color:var(--term-green); font-weight:700;
+  border:1px solid var(--term-green-dim);
+  padding:2px 8px; border-radius:2px;
+}
+.back-body{
+  flex:1; padding:16px 20px; overflow-y:auto;
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:14px; line-height:1.62;
+  color:#c9f7dd;
+}
+.back-body strong{color:var(--term-green);}
+.back-body p{margin:0 0 10px;}
+.tip-box{
+  margin-top:12px;
+  border-left:2px solid var(--amber);
+  background:rgba(255,177,0,0.08);
+  padding:9px 12px;
+  font-size:12.5px;
+  color:#ffd98a;
+  font-family:'JetBrains Mono',monospace;
+  line-height:1.55;
+}
+.tip-box b{color:var(--amber);}
+
+.navrow{
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  max-width:520px; margin:20px auto 0;
+  flex-wrap:wrap;
+}
+.navbtn{
+  font-family:'JetBrains Mono',monospace;
+  background:#111a2c; border:1px solid #2a3550; color:#c7cfe0;
+  padding:13px 16px; border-radius:4px; font-size:12.5px; letter-spacing:0.5px;
+  cursor:pointer; transition:all .15s ease;
+  min-height:46px;
+  flex:0 1 auto;
+  touch-action:manipulation;
+}
+.navbtn:hover{border-color:#4a5a80; background:#16213a;}
+.navbtn:disabled{opacity:0.35; cursor:not-allowed;}
+.navbtn.flip{
+  background:var(--term-green); color:#04140c; border-color:var(--term-green); font-weight:700;
+}
+.navbtn.flip:hover{background:#7bffc0;}
+.starbtn{
+  background:none; border:1px solid #2a3550; color:#78839c;
+  width:46px; height:46px; border-radius:4px; cursor:pointer; font-size:16px;
+  display:flex; align-items:center; justify-content:center;
+  flex:0 0 auto;
+  touch-action:manipulation;
+}
+.starbtn.on{color:var(--amber); border-color:var(--amber);}
+
+.tools-row{
+  display:flex; justify-content:center; gap:10px;
+  margin-top:16px; flex-wrap:wrap;
+}
+.toolbtn{
+  font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.5px;
+  background:none; border:1px solid #24304a; color:#6f7994;
+  padding:7px 12px; border-radius:3px; cursor:pointer;
+}
+.toolbtn:hover{color:#c7cfe0; border-color:#4a5a80;}
+.toolbtn.active{color:var(--amber); border-color:var(--amber);}
+
+footer.legend{
+  max-width:520px; margin:26px auto 0;
+  display:flex; flex-wrap:wrap; gap:10px 18px; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#6f7994;
+}
+.legend span{display:inline-flex; align-items:center; gap:6px;}
+.dot{width:8px;height:8px;border-radius:2px;display:inline-block;}
+
+.hint-touch{display:none;}
+@media (hover:none) and (pointer:coarse){
+  .hint-touch{display:inline;}
+  .hint-mouse{display:none;}
+}
+
+.empty{
+  display:flex; align-items:center; justify-content:center; height:100%;
+  font-family:'JetBrains Mono',monospace; color:#5b6580; font-size:13px; text-align:center; padding:20px;
+}
+
+@media (max-width:560px){
+  body{padding:16px 12px 32px;}
+  .stage{height:min(480px, 62svh); min-height:340px;}
+  h1{font-size:20px; letter-spacing:0.2px;}
+  .sub{font-size:12.5px;}
+  .qtext{font-size:15px;}
+  .front-body{padding:12px 16px 14px;}
+  .back-body{padding:14px 16px; font-size:13.5px;}
+  .chip{font-size:10.5px; padding:6px 10px;}
+  .navrow{gap:8px;}
+  .navbtn{padding:12px 14px; font-size:12px;}
+  .status-row{max-width:100%;}
+  .stage,.navrow,.tools-row,footer.legend{max-width:100%;}
+}
+@media (max-width:380px){
+  h1{font-size:17px;}
+  .eyebrow{font-size:10px; letter-spacing:2px;}
+  .front-head, .back-head{padding-left:14px; padding-right:14px;}
+  .front-body{padding:10px 14px 12px;}
+  .qtext{font-size:14px;}
+  .opts{font-size:12.5px;}
+  .navbtn{padding:11px 10px; font-size:11px;}
+  .starbtn{width:42px; height:42px;}
+  .toolbtn{font-size:10px; padding:6px 9px;}
+}
+@media (max-height:640px){
+  .stage{height:min(340px, 56svh); min-height:280px;}
+  .front-body{justify-content:flex-start; padding-top:6px;}
+}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="wrap">
+
+<header class="top">
+  <div class="eyebrow">// clearance level: candidate</div>
+  <h1>BITS3423 Security Clearance Deck</h1>
+  <p class="sub">Past-year exam questions, the full Mock Final Exam, and the 11-chapter Illustrated Exam Prep Book, fused into one flip-card deck. Tap a card to decrypt the answer.</p>
+</header>
+
+<div class="controls" id="filters"></div>
+
+<div class="status-row">
+  <span id="posLabel">1 / 59</span>
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  <span id="catLabel">ALL FILES</span>
+</div>
+
+<div class="stage">
+  <div class="card" id="card">
+    <div class="face front">
+      <div class="stripe" id="stripeEl"></div>
+      <div class="front-head">
+        <span class="cat-label" id="frontCat">PAST YEAR</span>
+        <span class="marks-badge" id="frontMarks">4 MARKS</span>
+      </div>
+      <div class="watermark">CLASSIFIED</div>
+      <div class="front-body">
+        <div class="tag" id="frontTag">Q · Question</div>
+        <div class="qtext" id="frontQ">Loading…</div>
+        <div class="opts" id="frontOpts"></div>
+      </div>
+      <div class="front-foot"><span class="hint-touch">TAP CARD TO DECRYPT</span><span class="hint-mouse">TAP CARD OR PRESS SPACE TO DECRYPT</span></div>
+    </div>
+    <div class="face back">
+      <div class="back-head">
+        <span class="stamp">DECRYPTED</span>
+        <span id="backId">CARD 01</span>
+      </div>
+      <div class="back-body" id="backBody"></div>
+    </div>
+  </div>
+</div>
+
+<div class="navrow">
+  <button class="navbtn" id="prevBtn">&larr; PREV</button>
+  <button class="navbtn flip" id="flipBtn">FLIP</button>
+  <button class="navbtn" id="nextBtn">NEXT &rarr;</button>
+  <button class="starbtn" id="starBtn" title="Flag for review">&#9733;</button>
+</div>
+
+<div class="tools-row">
+  <button class="toolbtn" id="shuffleBtn">&#8635; SHUFFLE</button>
+  <button class="toolbtn" id="resetBtn">RESET ORDER</button>
+  <button class="toolbtn" id="flaggedBtn">&#9733; FLAGGED ONLY (<span id="flagCount">0</span>)</button>
+</div>
+
+<footer class="legend">
+  <span><span class="dot" style="background:var(--blue)"></span>Past Year (15)</span>
+  <span><span class="dot" style="background:var(--red)"></span>Mock MCQ (20)</span>
+  <span><span class="dot" style="background:var(--green)"></span>Mock Short Answer (13)</span>
+  <span><span class="dot" style="background:var(--purple)"></span>Mock Structured (6)</span>
+  <span><span class="dot" style="background:var(--orange)"></span>Mock Case Study (5)</span>
+  <span><span class="dot" style="background:var(--cyan)"></span>Exam Prep Book (11 ch.)</span>
+</footer>
+
+</div>
+
+<script>
+const CARDS = [];
+function add(cat,marks,tag,q,opts,answerHtml,tip){
+  CARDS.push({cat,marks,tag,q,opts:opts||null,answerHtml,tip:tip||null});
+}
+
+/* ---------- PAST YEAR (15) ---------- */
+add("past","4 marks","PGP Services","Elaborate TWO (2) security services offered by PGP.",null,
+`<p><strong>Confidentiality</strong> — the message is encrypted using a combination of a symmetric session key and the recipient's public key, so only the intended recipient can decrypt and read it.</p>
+<p><strong>Authentication</strong> — the sender signs the message with their private key; the recipient verifies it with the sender's public key, confirming the sender's identity.</p>
+<p>(Other valid picks: <strong>Integrity</strong> — a signed hash detects tampering. <strong>Non-repudiation</strong> — sender can't deny sending. <strong>Compression</strong> — saves bandwidth.)</p>`,
+`Mnemonic <b>"CAIN-C"</b>: Confidentiality, Authentication, Integrity, Non-repudiation, Compression. Only elaborate 2 if asked for 2.`);
+
+add("past","3 marks","Email Protocols","List THREE (3) protocols involved in an email transaction and their function.",null,
+`<p><strong>SMTP</strong> (Simple Mail Transfer Protocol) — sends email, client→server or server→server.</p>
+<p><strong>POP3</strong> (Post Office Protocol v3) — downloads mail to a device, usually removing it from the server.</p>
+<p><strong>IMAP</strong> (Internet Message Access Protocol) — syncs mail across devices; messages stay on the server.</p>`,
+`SMTP = send. POP3 / IMAP = receive. Don't list SMTP twice for sending and receiving.`);
+
+add("past","3+3 marks","Non-repudiation of Origin","Define non-repudiation of origin, give an example, and explain the solution.",null,
+`<p><strong>Definition:</strong> the sender cannot later deny that they sent a particular message.</p>
+<p><strong>Example:</strong> a customer orders by email, then denies ordering when the bill arrives — the merchant needs proof.</p>
+<p><strong>Solution:</strong> digital signatures based on PKI — the sender signs with their private key, so only they could have authored it. A trusted timestamp and a Certificate Authority (CA) strengthen the proof further.</p>`,
+`Links directly to PGP: "Authentication" + "Non-repudiation" services ARE this solution. Reference PGP if both appear.`);
+
+add("past","6 marks","CIA Triad — Email Security","Explain each terminology of CIA in the context of email security.",null,
+`<p><strong>Confidentiality</strong> — only authorised parties can read the content, via encryption.</p>
+<p><strong>Integrity</strong> — content isn't altered in transit, via hashing/digital signatures.</p>
+<p><strong>Availability</strong> — the email system stays accessible when needed, protected against email bombing / DoS.</p>`,
+`Mnemonic "Can I Access?" = Confidentiality, Integrity, Availability. Availability is the one everyone forgets.`);
+
+add("past","6 marks","Email Security Threats","Discuss THREE (3) email security threats.",null,
+`<p>Pick any 3: <strong>Phishing</strong> (tricks users into revealing credentials), <strong>Malware/attachments</strong> (viruses/ransomware in attachments), <strong>Spoofing</strong> (forging sender address), <strong>Spam</strong> (unsolicited bulk mail), <strong>Email bombing/DoS</strong> (flooding to disrupt availability), <strong>Man-in-the-middle</strong> (intercepting mail in transit).</p>`,
+`Phishing ≠ Spoofing. Spoofing = faking sender identity (a technique). Phishing = the overall scam (often uses spoofing).`);
+
+add("past","4–10 marks","Law vs Ethics","Compare Law and Ethics.",null,
+`<p><strong>Source:</strong> Law = government/legislature. Ethics = personal/cultural/professional values.</p>
+<p><strong>Form:</strong> Law = written, codified. Ethics = often unwritten.</p>
+<p><strong>Enforcement:</strong> Law = police/courts. Ethics = conscience/social pressure.</p>
+<p><strong>Consequence:</strong> Law = fines/imprisonment. Ethics = disapproval/guilt/reputation loss.</p>
+<p><strong>Universality:</strong> Law = binding within jurisdiction. Ethics = subjective, varies by person/culture.</p>
+<p><strong>Flexibility:</strong> Law = rigid, formal change process. Ethics = flexible, evolves gradually.</p>`,
+`"Law = written rule + police. Ethics = unwritten value + conscience." Give paired points, not two separate lists.`);
+
+add("past","5+5 marks","Software Piracy & Copyright","Discuss the charge (Law vs Ethics) and how open-source software is affected by copyright.",null,
+`<p><strong>Law:</strong> selling pirated product keys violates copyright law — unauthorised reproduction/distribution, a criminal offence.</p>
+<p><strong>Ethics:</strong> unethical even without charges — deprives creators of revenue and deceives customers.</p>
+<p><strong>5 copyright effects on open-source:</strong> Licensing terms (GPL/MIT/Apache set conditions), Attribution requirement, Redistribution rights, Commercial use restriction, Derivative works (copyleft vs closed).</p>`,
+`"Open-source" does NOT mean "no copyright." It's still copyrighted — the licence just defines usage.`);
+
+add("past","3+4+4 marks","Lily & Office Ethics","Is Lily's behaviour ethical? Identify the ethical principles and steps to examine an ethical issue.",null,
+`<p><strong>Verdict:</strong> generally unethical — misuse of company resources/time for personal gain without authorisation.</p>
+<p><strong>Principles (pick 2):</strong> Utilitarian/Consequentialist (judge by outcome/harm), Rights/Duty (duty to use property only for work), Justice/Fairness (fair to other employees?).</p>
+<p><strong>4 steps:</strong> 1) Get the facts 2) Identify stakeholders & consequences 3) Evaluate alternatives using ethical theories 4) Decide & justify, then test publicly.</p>`,
+`Mnemonic "F.I.E.D": Facts → Identify stakeholders → Evaluate options → Decide & test.`);
+
+add("past","6 marks","Categories of Unethical/Illegal Behaviour","Explain THREE (3) categories of unethical and illegal behaviour (DataGuard case).",null,
+`<p><strong>Illegal AND Unethical</strong> — breaks the law and morals (e.g. stealing data outright).</p>
+<p><strong>Legal but Unethical</strong> — within the law but morally wrong. This is the DataGuard case: stayed within ToS wording but violated user trust.</p>
+<p><strong>Illegal but arguably Ethical</strong> — breaks a law but may be morally justifiable (e.g. whistleblowing).</p>`,
+`DataGuard's "we followed the ToS" defense = textbook "Legal but Unethical." Always map this case to that middle category.`);
+
+add("past","3 marks","Why Cybercrime is Hard to Prosecute","Recall THREE (3) reasons why computer crimes are hard to prosecute.",null,
+`<p>Pick 3: <strong>Jurisdiction issues</strong> (crosses borders), <strong>Evidence destroyed/altered easily</strong>, <strong>Lack of technical expertise</strong> in courts/law enforcement, <strong>Anonymity</strong> (VPNs/proxies), <strong>Laws lag behind technology</strong>.</p>`,
+`Mnemonic "J.E.T": Jurisdiction, Evidence destruction, Technical expertise gap. Be specific, not "hackers are smart."`);
+
+add("past","6 marks","DRP Structure Sequence","Discuss the DRP structure approach in sequence.",null,
+`<p>1) <strong>Risk Assessment</strong> — identify threats & impact.<br>2) <strong>Business Impact Analysis (BIA)</strong> — critical systems & acceptable downtime.<br>3) <strong>Develop Recovery Strategies</strong> — hot/warm/cold sites, replication.<br>4) <strong>Plan Development & Documentation</strong> — step-by-step procedures.<br>5) <strong>Testing & Drills</strong> — simulate disasters.<br>6) <strong>Maintenance & Review</strong> — keep it updated.</p>`,
+`Mnemonic "R.B.D.P.T.M": Risk → BIA → Develop → Plan → Test → Maintain. Order matters — sequence question.`);
+
+add("past","5–6 marks","Backup & Recovery Strategies","Explain FIVE (5) strategies for designing data backup and recovery.",null,
+`<p><strong>Regular scheduled backups</strong> (full/incremental), <strong>Off-site/cloud storage</strong>, <strong>Redundancy</strong> (RAID/replication), <strong>Encryption of backup data</strong>, <strong>Regular testing/verification of restores</strong>.</p>`,
+`A backup is not the same as a tested, working backup — examiners specifically look for "testing the restore process."`);
+
+add("past","3 marks","Cost vs Recovery Time Trade-off","Using an illustration, discuss the relationship between cost and time recovery factor.",null,
+`<p>Inverse relationship: shorter RTO → higher cost (real-time replication, hot sites). Longer acceptable RTO → cheaper (cold sites, tape backup).</p>
+<p><strong>Illustration:</strong> X-axis = Recovery Time, Y-axis = Cost. Downward-sloping curve — as Recovery Time increases, Cost decreases; near-zero Recovery Time, Cost rises sharply.</p>`,
+`The question says "using an illustration" — you must sketch/describe the graph for full marks, not just state it in words.`);
+
+add("past","3 marks","Maintenance, Auditing, Testing","Elaborate the purpose of each element: Maintenance, Auditing, Testing.",null,
+`<p><strong>Maintenance</strong> — keep backup hardware/software updated and functioning.</p>
+<p><strong>Auditing</strong> — review logs/processes to confirm compliance and catch gaps.</p>
+<p><strong>Testing</strong> — simulate a restore to confirm backups actually work.</p>`,
+`Testing ≠ Auditing — don't merge them. Auditing reviews records; Testing performs a simulated restore.`);
+
+add("past","varies","Case Study Answer Template","Hurricane Sandy: identify recovery priority and suggest guidelines.",null,
+`<p><strong>Priority:</strong> Critical/High — affected servers hosted major, high-traffic organisations; downtime = major reputational/financial/operational damage.</p>
+<p><strong>Guidelines:</strong> off-site/geographically distant backup site; elevate hardware above flood-risk levels; tested documented DRP with clear chain of command; redundant power/connectivity; proactive customer communication.</p>`,
+`General strategy for ANY scenario question: 1) name the concept 2) explain it generally 3) link back to the named case 4) give a recommendation. Step 3 separates a pass from a high-mark answer.`);
+
+/* ---------- MOCK MCQ (20) ---------- */
+function mcq(marks_ignored,q,opts,correctIdx,note){
+  add("mcq","1 mark","Mock · MCQ",q,opts,
+  `<p><strong>Correct answer: ${String.fromCharCode(65+correctIdx)}) ${opts[correctIdx]}</strong></p>${note?`<p>${note}</p>`:""}`,null);
+}
+mcq(1,"Which principle of the CIA triad is violated when an unauthorized party modifies a bank record?",
+  ["Confidentiality","Integrity","Availability","Authentication"],1);
+mcq(1,"Traffic analysis is an example of a:",
+  ["Active attack","Passive attack","Denial of Service","Malware infection"],1);
+mcq(1,"Which of the following is NOT one of the five methods of defense?",
+  ["Prevent","Deter","Encrypt","Detect"],2,
+  "Encrypt is a control (Chapter 1), not one of the five methods of defense (Prevent/Deter/Deflect/Detect/Recover) — two different lists.");
+mcq(1,"In RSA, which pair forms the PRIVATE key?",
+  ["{e, n}","{d, n}","{p, q}","{φ(n), n}"],1);
+mcq(1,"Which cipher uses a repeating keyword and a 26×26 tableau?",
+  ["Caesar cipher","Transposition cipher","Vigenère cipher","RSA"],2);
+mcq(1,"A digital signature is created by encrypting a message hash with the sender's:",
+  ["Public key","Private key","Session key","Symmetric key"],1);
+mcq(1,"Which type of malware is self-contained and requires NO user action to spread?",
+  ["Virus","Worm","Trojan Horse","Spyware"],1);
+mcq(1,"During which virus phase does the virus place an identical copy of itself into other programs?",
+  ["Dormant","Propagation","Triggering","Execution"],1,
+  "Phase order mnemonic: \"Doctors Prescribe The Elixir\" — Dormant, Propagation, Triggering, Execution.");
+mcq(1,"Which OWASP Top 10 (2025) risk is ranked #1?",
+  ["Injection","Broken Access Control","Cryptographic Failures","Insecure Design"],1);
+mcq(1,"Which memory protection method attaches extra access-right bits to every word of memory?",
+  ["Fence","Base/Bounds registers","Tagged Architecture","Paging"],2);
+mcq(1,"In an Access Control List (ACL), permissions are attached to the:",
+  ["Subject","Object","Network","Session"],1);
+mcq(1,"The Bell-LaPadula *-Property states that a process can only:",
+  ["Read objects at a lower level","Write objects at a higher or equal level","Delete any object","Read objects at any level"],1);
+mcq(1,"Which of the following is an INDIRECT inference attack technique?",
+  ["Direct query for a single record","Tracker attack","Password guessing","Packet sniffing"],1);
+mcq(1,"Which OSI layer handles routing and IP addressing?",
+  ["Data Link","Transport","Network","Session"],2);
+mcq(1,"In Kerberos, which component issues the Ticket-Granting Ticket (TGT)?",
+  ["TGS","AS (Authentication Server)","Service Server","Client"],1);
+mcq(1,"Which firewall type tracks the state of active connections?",
+  ["Packet-filtering","Stateful inspection","Circuit-level gateway","Personal firewall"],1);
+mcq(1,"Which email protocol typically deletes mail from the server after retrieval?",
+  ["SMTP","IMAP","POP3","MIME"],2);
+mcq(1,"Which biometric category includes fingerprint and iris scanning?",
+  ["Behavioral","Physiological","Cognitive","Contextual"],1);
+mcq(1,"Which WEP weakness allows attackers to modify packets without knowing the key?",
+  ["Static key reuse","CRC-32 integrity flaw","Weak IV","No mutual authentication"],1);
+mcq(1,"Under the Computer Crimes Act 1997 (CCA), which of the following is explicitly criminalized?",
+  ["Sending marketing emails","Unauthorized access to a computer system","Using open-source software","Registering a trademark"],1);
+
+/* ---------- MOCK SHORT ANSWER (13) ---------- */
+add("short","2 marks","Mock · Short Answer","Define Information Security.",null,
+`<p>The protection of information and the systems and hardware that use, store, and transmit that information.</p>`,null);
+add("short","5 marks","Mock · Short Answer","List the five categories of security services under X.800.",null,
+`<p>Authentication, Access control, Data confidentiality, Data integrity, Non-repudiation.</p>`,null);
+add("short","2 marks","Mock · Short Answer","State the Caesar cipher encryption formula.",null,
+`<p><strong>Ci = E(pi) = pi + k (mod 26)</strong></p>`,`Don't forget "mod 26" — omitting it loses a mark.`);
+add("short","2 marks","Mock · Short Answer","Give TWO (2) differences between symmetric and asymmetric cryptography.",null,
+`<p>Any two: symmetric uses 1 key vs asymmetric uses 2 keys; symmetric is faster vs asymmetric slower; symmetric's challenge is key distribution vs asymmetric's challenge is public-key authenticity.</p>`,null);
+add("short","2 marks","Mock · Short Answer","Define \"least privilege\" and \"fail-safe defaults.\"",null,
+`<p><strong>Least privilege</strong> — give a program/user only the access it legitimately needs, nothing more.</p>
+<p><strong>Fail-safe defaults</strong> — default-deny; if the security mechanism fails, it defaults to a secure/denied state.</p>`,null);
+add("short","3 marks","Mock · Short Answer","List THREE (3) types of malicious code and briefly define each.",null,
+`<p>Any three: Virus (attaches to a host, needs user action), Worm (self-contained, self-propagating), Trojan Horse (useful function + hidden malicious action), Logic Bomb (triggers on a condition), Trapdoor (hidden entry point), Spyware (steals information), Botnet (network of compromised machines).</p>`,null);
+add("short","2 marks","Mock · Short Answer","Explain the difference between a fault and a failure.",null,
+`<p><strong>Fault</strong> — the developer's/inside view of a defect in the code.</p><p><strong>Failure</strong> — the user's/outside view; the observable effect of that fault.</p>`,null);
+add("short","2 marks","Mock · Short Answer","Define Access Control List (ACL) and Capability system, highlighting their key difference.",null,
+`<p><strong>ACL</strong> — rights attached to the OBJECT (a file lists which users can access it).</p>
+<p><strong>Capability</strong> — rights attached to the SUBJECT (a user holds an unforgeable ticket granting access).</p>`,null);
+add("short","2 marks","Mock · Short Answer","State the Bell-LaPadula model's two main rules.",null,
+`<p><strong>Simple Security Property</strong> — no read up (read only at or below own level).</p>
+<p><strong>*-Property</strong> — no write down (write only at or above own level).</p>`,`"No read up, no write down."`);
+add("short","2 marks","Mock · Short Answer","List the four levels of enforcing database security.",null,
+`<p>Physical security, Operating system security, DBMS security, Data encryption.</p>`,null);
+add("short","2 marks","Mock · Short Answer","Define the \"inference problem\" in database security.",null,
+`<p>Deriving/inferring sensitive data from non-sensitive data through legitimate queries, without directly requesting the sensitive value.</p>`,null);
+add("short","2 marks","Mock · Short Answer","Differentiate Link Encryption and End-to-End Encryption.",null,
+`<p><strong>Link Encryption</strong> — encrypts data hop-by-hop between adjacent routers/nodes; each intermediate hop briefly decrypts it, so it's vulnerable at every hop.</p>
+<p><strong>End-to-End Encryption</strong> — data is encrypted at the source and only decrypted at the final destination; it stays encrypted through every intermediate node.</p>`,null);
+add("short","2 marks","Mock · Short Answer","Define non-repudiation of origin in the context of email security, giving an example.",null,
+`<p>The sender cannot later deny they sent a message. Example: a customer orders by email then denies it later — the merchant needs proof (a digital signature) that they really sent it.</p>`,null);
+
+/* ---------- MOCK STRUCTURED (6) ---------- */
+add("struct","6 marks","Mock · Structured","Compare THREE (3) differences between a computer virus and a computer worm.",null,
+`<p>1) A virus requires a host program and user action; a worm is self-contained and self-executing, needing no user action.</p>
+<p>2) A virus infects by altering stored code on disk; a worm infects by altering running code / propagating across communication links.</p>
+<p>3) A virus spreads more slowly (depends on human behaviour); a worm spreads very rapidly and automatically by exploiting vulnerabilities.</p>`,
+`Common mistake: stating this backwards (saying viruses spread automatically and worms need a host). Double-check before submitting.`);
+add("struct","6 marks","Mock · Structured","Illustrate how a fixed fence works in memory management, with a labeled diagram.",null,
+`<p>Draw a boundary line/register separating memory into two regions. Label the <strong>OS region</strong> on one side. Label the <strong>User region</strong> on the other side, and state the rule: address below the fence = error (protected OS space); address above the fence = allowed (user space).</p>`,
+`Losing marks for an UNLABELED diagram is common — always write labels even under time pressure.`);
+add("struct","5 marks","Mock · Structured","Using Ci = E(pi) = pi + 4, decrypt: \"MPD MW EIWX XS FI TVITEVIH\" — show your working.",null,
+`<p><strong>Method:</strong> since encryption was pi + 4, decryption is pi = Ci − 4 (mod 26) — shift every ciphertext letter BACK by 4 and show the letter-by-letter working.</p>
+<p><strong>Target decrypted plaintext (per marking scheme):</strong> "IT IS TIME BEST TO BE PREPARED"</p>`,
+`Marks are awarded progressively for: (1) stating the correct approach, (2) showing method on the first few letters, (3) completing the full message. Partial credit is given for correct METHOD even with small arithmetic slips — always show your working.`);
+add("struct","6 marks","Mock · Structured","Explain the Kerberos authentication process, including the role of the AS and TGS.",null,
+`<p>The <strong>KDC (Key Distribution Center) = AS + TGS</strong>. The <strong>AS (Authentication Server)</strong> verifies the client's identity and issues a <strong>Ticket-Granting Ticket (TGT)</strong>. The client then uses the TGT to request a <strong>Service Ticket</strong> from the <strong>TGS (Ticket-Granting Server)</strong>, and presents that Service Ticket to the actual Service Server. The password is never sent to the service itself.</p>`,null);
+add("struct","4 marks","Mock · Structured","Differentiate DRP and BCP, and illustrate a simple diagram showing the difference.",null,
+`<p><strong>DRP</strong> = IT-focused technical recovery. <strong>BCP</strong> = whole-business continuity. DRP is a <strong>subset</strong> of BCP.</p>
+<p><strong>Diagram:</strong> draw a nested/Venn diagram with the DRP circle INSIDE the larger BCP circle.</p>`,
+`Common mistake: drawing DRP and BCP as two SEPARATE, non-overlapping circles instead of DRP nested inside BCP.`);
+add("struct","3 marks","Mock · Structured","Explain THREE (3) purposes of the Personal Data Protection Act (PDPA) 2010.",null,
+`<p>Any three: regulates how commercial organisations collect/process/store/use personal data; protects individual privacy from misuse of personal information; requires proper consent before data collection/processing; holds organisations accountable for data breaches.</p>`,null);
+
+/* ---------- MOCK CASE STUDY (Q40, 5 parts) ---------- */
+const SCEN = `<em>Scenario:</em> A mid-sized e-commerce company in Melaka suffered a ransomware attack that encrypted its order database for 18 hours, costing an estimated RM40,000/hour. The malware spread from an employee's laptop after they opened an email attachment claiming to be an "urgent invoice."<br><br>`;
+add("case","4 marks","Mock · Case Study (a)","Identify the type of malicious code most likely responsible, and explain how it likely gained control of the system.",null,
+SCEN+`<p>Most likely a <strong>Trojan Horse</strong> delivering a ransomware payload — disguised as a useful "urgent invoice" attachment that performed a hidden malicious action.</p>
+<p>It gained control via <strong>social engineering</strong>: the user was tricked into opening/running the malicious attachment, which then executed with the user's privileges to encrypt files.</p>`,
+`"Virus" or general "malware" earns partial credit if the social-engineering explanation is sound, but "Trojan Horse via social engineering" is the most precise, complete answer.`);
+add("case","6 marks","Mock · Case Study (b)","Discuss the DRP structure approach the company should have followed, in sequence.",null,
+SCEN+`<p>1) <strong>Disaster Strikes</strong> — the ransomware encryption event occurs.<br>2) <strong>Business Impact Analysis (BIA)</strong> — quantify the loss (RM40,000/hour), confirm the order database is critical and needs urgent recovery priority.<br>3) <strong>DRP Execution</strong> — isolate infected systems, restore the database from clean backups, verify integrity before reconnecting.<br>4) <strong>Recovery & Maintenance</strong> — resume operations, run a post-incident review, update backup/security procedures.</p>`,null);
+add("case","5 marks","Mock · Case Study (c)","Using an illustration, discuss the relationship between the cost estimation factor and the time recovery factor for this scenario.",null,
+SCEN+`<p>Inverse relationship: faster recovery needs higher investment in recovery infrastructure; slower recovery means higher accumulating downtime cost (RM40,000/hour).</p>
+<p><strong>Illustration:</strong> two intersecting curves — Cost of Recovery Solution (decreases as allowed recovery time increases) vs Cost of Downtime (increases as recovery time increases). The optimal point is where total cost (solution + downtime) is minimized — here, that justifies investing in faster recovery given the high hourly loss.</p>`,null);
+add("case","3 marks","Mock · Case Study (d)","Identify the level of recovery priority for the order database system, and justify your answer.",null,
+SCEN+`<p><strong>Critical priority.</strong> The order database directly affects core business operations (order processing) and causes significant, ongoing financial loss (RM40,000/hour), requiring restoration within hours, not days.</p>`,null);
+add("case","2 marks","Mock · Case Study (e)","Suggest ONE (1) guideline the company should adopt going forward to reduce the risk of a similar incident.",null,
+SCEN+`<p>Example: implement mandatory employee security-awareness training on phishing/social engineering, combined with email attachment sandboxing/filtering, to reduce the likelihood of malware entering via email attachments.</p>`,
+`Full marks need a SPECIFIC, justified recommendation — a vague one ("be more careful") earns partial credit only.`);
+
+/* ---------- EXAM PREP BOOK — 11 CHAPTERS ---------- */
+function bk(ch,topic,q,a,tip){ add("book",ch,topic,q,null,`<p>${a}</p>`,tip||null); }
+
+/* Chapter 1 — Introduction to Information Security */
+bk("CH.1 · INFOSEC","CIA Triad","3 components of the CIA triad?","Confidentiality, Integrity, Availability");
+bk("CH.1 · INFOSEC","Attack Categories","2 categories of security attacks?","Passive and Active");
+bk("CH.1 · INFOSEC","Passive Attacks","2 types of passive attacks?","Release of message contents; Traffic analysis");
+bk("CH.1 · INFOSEC","Active Attacks","4 types of active attacks?","Masquerade, Replay, Modification of messages, Denial of Service");
+bk("CH.1 · INFOSEC","Passive Attacks","Why are passive attacks hard to detect?","They don't alter data — no trace of tampering");
+bk("CH.1 · INFOSEC","Methods of Defense","5 methods of defense?","Prevent, Deter, Deflect, Detect, Recover");
+bk("CH.1 · INFOSEC","Controls","5 types of controls?","Encryption, Software, Hardware, Policies, Physical");
+bk("CH.1 · INFOSEC","X.800 Services","5 security services (X.800)?","Authentication, Access control, Data confidentiality, Data integrity, Non-repudiation");
+bk("CH.1 · INFOSEC","Attack Types","Difference between masquerade and replay?","Masquerade = pretending to be someone else; Replay = resending a captured genuine old message");
+bk("CH.1 · INFOSEC","Scenario Cast","Bob-Alice-Trent: who is the attacker?","Trent");
+bk("CH.1 · INFOSEC","Security Policy","3 levels of security policy?","Objectives, organizational, system",
+`Don't treat "security" and "information security" as the same thing — always give BOTH definitions if asked to define both.`);
+bk("CH.1 · INFOSEC","Scenario","An attacker intercepts a transaction and re-sends an identical copy to trigger a duplicate payment — name the attack, classify it, and suggest one control.",
+"This is a <strong>Replay attack</strong> — an <strong>Active</strong> attack, since the attacker captured and retransmitted data rather than just observing it. Control: use timestamps/sequence numbers/nonces, or digital signatures with freshness checks.");
+
+/* Chapter 2 — Authentication & Basic Cryptography */
+bk("CH.2 · CRYPTO","Key Terminology","What is a key in cryptography?","Information used in a cipher, known only to sender/receiver");
+bk("CH.2 · CRYPTO","Key Terminology","What is cryptanalysis?","Study of deciphering ciphertext WITHOUT knowing the key");
+bk("CH.2 · CRYPTO","Password Security","Password combinations formula?","<strong>N = r^s</strong> (r = character set size, s = length)");
+bk("CH.2 · CRYPTO","Password Security","Reactive vs proactive password checking?","Reactive checks AFTER creation; proactive checks DURING creation");
+bk("CH.2 · CRYPTO","Caesar Cipher","Caesar cipher encryption formula?","Ci = E(pi) = pi + k (mod 26)");
+bk("CH.2 · CRYPTO","Vigenère Cipher","Vigenère padding rule?","Pad with 'x' at the end only if not evenly divisible by block size");
+bk("CH.2 · CRYPTO","Transposition Cipher","Unkeyed transposition fill method?","Column-wise, top-to-bottom, left-to-right; read ciphertext row-wise");
+bk("CH.2 · CRYPTO","Transposition Cipher","Keyed transposition read method?","Column by column, in numerical order of key digits");
+bk("CH.2 · CRYPTO","History","Who broke the Vigenère cipher, and when?","Charles Babbage (1854) and Friedrich Kasiski (1863)");
+bk("CH.2 · CRYPTO","RSA","RSA public key components?","{e, n}");
+bk("CH.2 · CRYPTO","RSA","RSA private key components?","{d, n}");
+bk("CH.2 · CRYPTO","RSA","With p=17, q=11: n and φ(n)?","n = 187, φ(n) = 160",
+"Full worked example: e=7, d=23. Encrypt M=88 → C=88⁷ mod 187=11. Decrypt → 11²³ mod 187 = 88.");
+bk("CH.2 · CRYPTO","Digital Signature","How is a digital signature generated?","Hash the message, encrypt the hash with sender's PRIVATE key");
+bk("CH.2 · CRYPTO","Digital Signature","How is a digital signature verified?","Decrypt with sender's PUBLIC key, re-hash the message, compare hashes");
+bk("CH.2 · CRYPTO","PKI","What does a CA do?","Guarantees authenticity of public keys by signing certificates");
+bk("CH.2 · CRYPTO","Attacks on Crypto","4 methods of attack on encryption systems?","Ciphertext-only, known-plaintext, chosen-plaintext, chosen-ciphertext");
+bk("CH.2 · CRYPTO","Steganography","What is steganography?","Hiding the EXISTENCE of a message (vs cryptography, which hides the MEANING)");
+bk("CH.2 · CRYPTO","RSA Practice","Set up RSA with p=5, q=11.","n = 55, φ(n) = 40. Choosing e=3 (gcd(3,40)=1) → PU={3,55}. Solving 3d≡1 mod 40 gives d=27 → PR={27,55}.",
+"Common mistakes: mixing up e and d, or forgetting to clean plaintext before blocking in Vigenère/transposition — both cost automatic marks.");
+
+/* Chapter 3 — Program Security */
+bk("CH.3 · PROGRAM SEC","Secure Design","What is \"least privilege\"?","Give a program only the access it legitimately needs, nothing more");
+bk("CH.3 · PROGRAM SEC","Secure Design","What is \"defense in depth\"?","Multiple redundant protections; all must be breached to compromise the system");
+bk("CH.3 · PROGRAM SEC","Fault vs Failure","Difference between a fault and a failure?","Fault = developer's inside view of a defect; Failure = user's outside view (the observable effect)");
+bk("CH.3 · PROGRAM SEC","Vulnerabilities","What is a buffer overflow?","Not checking array bounds, allowing data to overwrite adjacent memory");
+bk("CH.3 · PROGRAM SEC","Virus vs Worm","Does a virus need a host program?","Yes");
+bk("CH.3 · PROGRAM SEC","Virus vs Worm","Does a worm need a host program?","No — it is self-contained and self-propagating");
+bk("CH.3 · PROGRAM SEC","Malicious Code","What is a Trojan Horse?","A program with a useful function that also performs an unexpected malicious action");
+bk("CH.3 · PROGRAM SEC","Malicious Code","What is a Logic Bomb?","Malicious code that activates on a specific event/condition");
+bk("CH.3 · PROGRAM SEC","Malicious Code","What is a Salami Attack?","Stealing tiny amounts from many transactions so each individual theft is negligible");
+bk("CH.3 · PROGRAM SEC","Virus Phases","List the 4 virus phases in order.","Dormant → Propagation → Triggering → Execution",
+`Mnemonic "D-P-T-E" = "Doctors Prescribe The Elixir."`);
+bk("CH.3 · PROGRAM SEC","Malicious Code","What is a Polymorphic virus?","Mutates with every new host to evade signature-based detection");
+bk("CH.3 · PROGRAM SEC","Malicious Code","What is a Botnet?","Compromised machines (\"bots\") under common command-and-control");
+bk("CH.3 · PROGRAM SEC","OWASP","OWASP Top 10 (2025) #1 risk?","Broken Access Control");
+bk("CH.3 · PROGRAM SEC","XSS","Stored vs Reflected XSS?","Stored is saved permanently server-side; Reflected exists only within one request/response");
+bk("CH.3 · PROGRAM SEC","Touchpoints","Top 3 Touchpoints in software security?","Code Review, Risk Analysis, Penetration Testing");
+bk("CH.3 · PROGRAM SEC","Scenario","Hundreds of systems make repetitive requests to random internal IPs; no files were manually shared — what is it, and how does it spread?",
+"<strong>i) Worm.</strong> <strong>ii)</strong> It self-propagates automatically across the network, exploiting a vulnerability in a network service — no user intervention or file-sharing required.");
+
+/* Chapter 4 — Operating System Security */
+bk("CH.4 · OS SEC","Separation","4 types of separation in OS security?","Physical, Temporal, Logical, Cryptographic");
+bk("CH.4 · OS SEC","Memory Protection","What is a fence register?","A hardware register holding the boundary address between OS and user memory");
+bk("CH.4 · OS SEC","Memory Protection","Main advantage of paging over segmentation?","Equal-size pages reduce fragmentation");
+bk("CH.4 · OS SEC","Memory Protection","Main disadvantage of paging vs segmentation?","Loss of individual/logical access rights within a page");
+bk("CH.4 · OS SEC","Access Control","What is an Access Control Matrix?","A table with subjects as rows, objects as columns, and cells listing rights");
+bk("CH.4 · OS SEC","Access Control","What is an ACL?","A list attached to an OBJECT specifying which subjects have which rights");
+bk("CH.4 · OS SEC","Access Control","What is a Capability?","An unforgeable \"ticket\" attached to a SUBJECT granting access to objects");
+bk("CH.4 · OS SEC","Bell-LaPadula","Bell-LaPadula Simple Security Property?","A process at level k can only read objects at its level or lower (no read up)");
+bk("CH.4 · OS SEC","Bell-LaPadula","Bell-LaPadula *-Property?","A process at level k can only write objects at its level or higher (no write down)",
+`Together: "No Read Up, No Write Down" — protects CONFIDENTIALITY. Analogy: a commander can read a lieutenant's reports (read-down); a lieutenant can send info up to a commander (write-up).`);
+bk("CH.4 · OS SEC","Passwords","3 password storage methods?","Conventional (reversible) encryption, one-way cipher (hashing), salted passwords");
+bk("CH.4 · OS SEC","Passwords","Why is salting used?","To avoid identical passwords producing identical stored hashes");
+bk("CH.4 · OS SEC","Authentication Threats","4 threats to authentication?","Spoofing, Eavesdropping, Modification, Masquerading");
+bk("CH.4 · OS SEC","UNIX","What does UNIX setuid implement?","Temporary Acquired Permission — the executor temporarily gains the owner's rights");
+bk("CH.4 · OS SEC","Scenario","Victor's shared computer lets another user delete/edit his files without permission — what's the cause and the fix?",
+"<strong>Cause:</strong> weak/absent access control (e.g. an overly permissive group policy). <strong>Fix:</strong> a proper ACL — Victor as Owner with exclusive Write/Delete rights, Read-only or No-access for everyone else.");
+
+/* Chapter 5 — Database Security */
+bk("CH.5 · DATABASE SEC","Definitions","Pangalos's definition of database security?","Ability of the system to enforce a security policy governing disclosure, modification, or destruction of information");
+bk("CH.5 · DATABASE SEC","Enforcement Levels","4 levels of enforcing database security?","Physical, Operating system, DBMS, Data encryption");
+bk("CH.5 · DATABASE SEC","Enforcement Levels","Why are the first 3 levels insufficient alone?","They can't fully control disclosure of sensitive data or verify authenticity of origin");
+bk("CH.5 · DATABASE SEC","Integrity","3 ways a DBMS maintains element integrity?","Field checks, Access control, Change log");
+bk("CH.5 · DATABASE SEC","Two-Phase Update","Intent Phase of Two-Phase Update?","The DBMS gathers info/resources needed but makes no actual changes yet");
+bk("CH.5 · DATABASE SEC","Two-Phase Update","Commit Phase of Two-Phase Update?","A commit flag is written and the DBMS makes the permanent changes");
+bk("CH.5 · DATABASE SEC","Inference","What is the inference problem?","Deriving sensitive data from non-sensitive data through legitimate queries");
+bk("CH.5 · DATABASE SEC","Inference","What is a Direct Attack?","Queries yielding few records, targeting sensitive values directly");
+bk("CH.5 · DATABASE SEC","Inference","What is a Tracker attack?","Adding extra records retrievable across two queries to isolate a target's value");
+bk("CH.5 · DATABASE SEC","Inference","3 controls for statistical inference attacks?","Suppression, Concealing, Limited response suppression (also: combining, perturbation, query analysis)");
+bk("CH.5 · DATABASE SEC","Multilevel Security","What is the Integrity Lock (\"spray paint\") method?","A sensitivity label kept WITH the element, unforgeable/unique/concealed via checksum");
+bk("CH.5 · DATABASE SEC","Multilevel Security","What is a \"View\" in multilevel DB security?","A subset of the database containing exactly what a user is entitled to access");
+
+/* Chapter 6 — Security in Networks */
+bk("CH.6 · NETWORKS","OSI Model","7 OSI layers, top to bottom?","Application, Presentation, Session, Transport, Network, Data Link, Physical",
+`Mnemonic: "All People Seem To Need Data Processing."`);
+bk("CH.6 · NETWORKS","OSI Model","Which OSI layer handles routing/IP?","Layer 3 — Network");
+bk("CH.6 · NETWORKS","Hacking Cycle","5 phases of the hacking cycle?","Reconnaissance, Scanning, Gaining Access, Maintaining Access, Covering Tracks",
+`Mnemonic: "Really Sneaky Guys Move Covertly."`);
+bk("CH.6 · NETWORKS","Network Threats","CIA property Eavesdropping violates?","Confidentiality");
+bk("CH.6 · NETWORKS","Network Threats","CIA property DoS violates?","Availability");
+bk("CH.6 · NETWORKS","Encryption","Link vs End-to-End encryption?","Link secures hop-by-hop (vulnerable at each hop); End-to-end secures sender-to-receiver regardless of hops");
+bk("CH.6 · NETWORKS","VPN","What does a VPN do?","Creates a secure encrypted tunnel over a public network");
+bk("CH.6 · NETWORKS","SSH","What protocol does SSH replace?","Telnet");
+bk("CH.6 · NETWORKS","Kerberos","What is the KDC in Kerberos?","Key Distribution Center — comprising the AS and TGS");
+bk("CH.6 · NETWORKS","Kerberos","What is a TGT?","Ticket-Granting Ticket, issued by the AS, used to request service tickets");
+bk("CH.6 · NETWORKS","Kerberos","Is the password ever sent to the target service in Kerberos?","No");
+bk("CH.6 · NETWORKS","IPSec","Two modes of IPSec?","Transport mode (payload only) and Tunnel mode (entire IP packet, used for VPNs)");
+bk("CH.6 · NETWORKS","IPSec","Difference between AH and ESP?","AH = authentication/integrity only; ESP = confidentiality + optional authentication");
+bk("CH.6 · NETWORKS","Firewalls","What is a stateful inspection firewall?","Tracks the state of active connections, allowing legitimate return traffic");
+bk("CH.6 · NETWORKS","IDS","NIDS vs HIDS?","NIDS monitors a network segment; HIDS monitors a single host");
+bk("CH.6 · NETWORKS","IDS","IDS vs IPS?","IDS only detects and alerts; IPS also actively blocks");
+bk("CH.6 · NETWORKS","IDS","Main weakness of signature-based IDS?","Cannot detect novel/zero-day attacks");
+bk("CH.6 · NETWORKS","Scenario","Outbound traffic doesn't match any known signature — what does this suggest, and what should be deployed instead?",
+"Likely a novel/zero-day attack, which signature-based detection is fundamentally blind to. <strong>Recommendation:</strong> deploy an anomaly-based IDS, which flags deviations from normal behaviour even without a matching signature.");
+
+/* Chapter 7 — Security in Applications */
+bk("CH.7 · APPLICATIONS","Email Basics","Two parts of an email (RFC 822)?","The header and the body");
+bk("CH.7 · APPLICATIONS","Email Security","5 security services needed for email?","Confidentiality, Data origin authentication, Message integrity, Non-repudiation of origin, Key management");
+bk("CH.7 · APPLICATIONS","Email Basics","What is MIME?","Extends RFC 822 to support non-textual content, non-ASCII text, and long messages");
+bk("CH.7 · APPLICATIONS","PGP","PGP's two main security services?","Confidentiality (session key + public key) and Authentication (digital signature)");
+bk("CH.7 · APPLICATIONS","Email Protocols","Difference between POP3 and IMAP?","POP3 downloads and deletes from the server; IMAP keeps mail synced on the server");
+bk("CH.7 · APPLICATIONS","Non-repudiation","Non-repudiation of origin issue?","The risk that a sender could later falsely deny sending an email");
+bk("CH.7 · APPLICATIONS","Non-repudiation","Solution to non-repudiation of origin?","Digital signatures");
+bk("CH.7 · APPLICATIONS","Web Security","HTTPS vs HTTP ports?","HTTPS = 443, HTTP = 80");
+bk("CH.7 · APPLICATIONS","FTP","Main weakness of plain FTP?","Transmits credentials and data in plaintext");
+bk("CH.7 · APPLICATIONS","Biometrics","2 categories of biometric authentication?","Physiological (physical body traits) and Behavioral (behaviour patterns)",
+"<strong>Physiological</strong> traits (fingerprint, iris, face) are relatively stable over time. <strong>Behavioral</strong> traits (signature dynamics, keystroke rhythm) can vary with context/mood/stress.");
+bk("CH.7 · APPLICATIONS","Biometrics","4 stages of the biometric system model?","Sensor → Feature Extraction → Matching → Decision");
+bk("CH.7 · APPLICATIONS","Biometrics","What is FAR?","False Acceptance Rate — an unauthorized person is incorrectly accepted");
+bk("CH.7 · APPLICATIONS","Biometrics","What is FRR?","False Rejection Rate — an authorized person is incorrectly rejected");
+bk("CH.7 · APPLICATIONS","Biometrics","What is EER?","The point where FAR and FRR are equal");
+
+/* Chapter 8 — Wireless Security */
+bk("CH.8 · WIRELESS","SSID","What does SSID stand for?","Service Set Identification");
+bk("CH.8 · WIRELESS","SSID","Why is hiding SSID not real security?","The beacon broadcast (containing the SSID) can't be disabled");
+bk("CH.8 · WIRELESS","WEP","What algorithm does WEP rely on?","RC4 (via KSA + PRGA)");
+bk("CH.8 · WIRELESS","WEP","WEP's IV size?","24 bits");
+bk("CH.8 · WIRELESS","WEP","Why is WEP's CRC-32 weak?","It's linear and unencrypted — attackers can modify packets and recalculate a valid checksum");
+bk("CH.8 · WIRELESS","WEP","4 main WEP attack techniques?","Passive Sniffing, Packet Injection, ARP Replay, Deauthentication");
+bk("CH.8 · WIRELESS","WPA","What did WPA introduce to replace static keys?","TKIP — a unique key per packet");
+bk("CH.8 · WIRELESS","WPA","WPA's message integrity algorithm?","Michael (MIC)");
+bk("CH.8 · WIRELESS","WPA2","WPA2's main encryption upgrade?","AES via CCMP (replacing TKIP/RC4)");
+bk("CH.8 · WIRELESS","WPA","What attack are WPA/WPA2-PSK vulnerable to?","Dictionary attacks (e.g. CowPatty on a captured EAPOL handshake)");
+bk("CH.8 · WIRELESS","WPA3","What does WPA3 use to resist offline dictionary attacks?","SAE (Simultaneous Authentication of Equals)");
+bk("CH.8 · WIRELESS","Standards","Which IEEE standard does WPA2 fully implement?","IEEE 802.11i");
+
+/* Chapter 9 — Legal, Privacy and Ethical Issues */
+bk("CH.9 · LEGAL & ETHICS","Definitions","Define Law.","A rule of conduct formally recognized/enforced by a governmental authority");
+bk("CH.9 · LEGAL & ETHICS","Definitions","Define Ethics.","A set of moral principles governing individual/group conduct");
+bk("CH.9 · LEGAL & ETHICS","Legal/Ethical Matrix","Example of Legal but Unethical?","Legally hiding a data-selling clause deep in Terms of Service");
+bk("CH.9 · LEGAL & ETHICS","Legal/Ethical Matrix","Example of Illegal but Ethical?","A whistleblower illegally leaking documents to expose corruption");
+bk("CH.9 · LEGAL & ETHICS","Global Privacy Law","What does GDPR stand for?","General Data Protection Regulation (EU)");
+bk("CH.9 · LEGAL & ETHICS","Malaysian Law","Malaysia's key data protection law?","PDPA (Personal Data Protection Act) 2010");
+bk("CH.9 · LEGAL & ETHICS","Global Privacy Law","What does HIPAA regulate?","Healthcare data privacy in the US");
+bk("CH.9 · LEGAL & ETHICS","Security vs Privacy","Core difference between security and privacy?","Security protects data; privacy concerns whether it should be collected at all");
+bk("CH.9 · LEGAL & ETHICS","IP Law","What does Copyright protect?","The tangible/fixed expression of an idea");
+bk("CH.9 · LEGAL & ETHICS","IP Law","What does Patent protect?","The invention or functional mechanism itself");
+bk("CH.9 · LEGAL & ETHICS","IP Law","What does Trademark protect?","Brand identity elements used in commerce");
+bk("CH.9 · LEGAL & ETHICS","Information as an Object","5 characteristics of Information as an Object?","Not depletable, replicable, minimal marginal cost, timely value, transferred intangibly");
+bk("CH.9 · LEGAL & ETHICS","Employment","What is the \"Work for Hire\" doctrine?","IP created during work hours/with company equipment belongs to the employer");
+bk("CH.9 · LEGAL & ETHICS","Scenario","An app has a stylised logo, a slogan, and 50,000 lines of original source code — what protects each?",
+"The <strong>logo and slogan</strong> are protected under <strong>Trademark</strong>. The <strong>source code</strong> is protected under <strong>Copyright</strong>, giving exclusive rights to reproduce, modify, and distribute it.");
+
+/* Chapter 10 — Cyberlaw */
+bk("CH.10 · CYBERLAW","Nature of Law","3 characteristics of Law?","Authority, Enforceability, Universality (Rule of Law)");
+bk("CH.10 · CYBERLAW","Nature of Law","3 functions of Law?","Maintaining Order, Resolving Disputes, Protecting Rights and Liberties");
+bk("CH.10 · CYBERLAW","Branches of Law","Difference between Criminal and Civil Law?","Criminal deals with offences against the state (penalty); Civil deals with private disputes (compensation)");
+bk("CH.10 · CYBERLAW","Branches of Law","What is Tort Law?","A branch of civil law addressing civil wrongs (not from contracts) that cause harm, claimable for compensation");
+bk("CH.10 · CYBERLAW","Malaysian Cyberlaw","What does the CCA 1997 criminalize?","Unauthorized access, unauthorized modification of data, wrongful communication of passwords");
+bk("CH.10 · CYBERLAW","Malaysian Cyberlaw","What does CMA Section 233 criminalize?","Using network facilities to transmit offensive, menacing, or harassing content");
+bk("CH.10 · CYBERLAW","Malaysian Cyberlaw","What does PDPA 2010 regulate?","How commercial entities collect, use, and store personal data");
+bk("CH.10 · CYBERLAW","Malaysian Cyberlaw","What does the Cyber Security Act 2024 identify?","11 critical national sectors requiring mandatory codes of practice and audits");
+bk("CH.10 · CYBERLAW","Computer Crime","3 categories of computer crime by role of computer?","Computer as Target, Storage Device, Communications Tool");
+bk("CH.10 · CYBERLAW","Computer Crime","4 reasons computer crime is hard to prosecute?","Lack of understanding, lack of physical evidence, complexity/jurisdiction, involvement of juveniles");
+bk("CH.10 · CYBERLAW","Cyberlaw Trends","What drives continuous review of cyberlaws?","Technological, business, and criminal innovations, plus globalization");
+bk("CH.10 · CYBERLAW","Scenario Matching","Match: a state e-government portal for digital submissions.","Electronic Government Activities Act 2007");
+bk("CH.10 · CYBERLAW","Scenario Matching","Match: a loyalty app collecting MyKad numbers, GPS, and purchase history.","PDPA 2010");
+bk("CH.10 · CYBERLAW","Scenario Matching","Match: a digital bank executing binding agreements online via CA-issued signatures.","Digital Signature Act 1997");
+bk("CH.10 · CYBERLAW","Scenario Matching","Match: a centralized threat-monitoring system for critical rail infrastructure.","Cyber Security Act 2024 (Act 854)");
+
+/* Chapter 11 — Disaster Recovery & Business Continuity */
+bk("CH.11 · DR & BCP","Definitions","Define \"disaster.\"","An unexpected event causing significant disruption, resulting in inability to perform normal business functions");
+bk("CH.11 · DR & BCP","DRP vs BCP","What does DRP focus on?","Restoring IT systems, networks, databases, and technology infrastructure");
+bk("CH.11 · DR & BCP","DRP vs BCP","What does BCP focus on?","Maintaining overall business operations across ALL departments");
+bk("CH.11 · DR & BCP","DRP vs BCP","Is DRP a subset of BCP?","Yes — DRP is the smaller, IT-focused part of the broader BCP");
+bk("CH.11 · DR & BCP","Recovery Sequence","4-stage disaster recovery sequence?","Disaster Strikes → BIA → DRP Execution → Recovery & Maintenance");
+bk("CH.11 · DR & BCP","BIA","4 objectives of a BIA?","Identify critical functions; determine impact; establish recovery priorities/RTOs; support resource allocation");
+bk("CH.11 · DR & BCP","BIA","What is an RTO?","Maximum acceptable downtime before a system causes unacceptable business harm");
+bk("CH.11 · DR & BCP","Recovery Priority","3 levels of recovery priority?","Critical, Essential, Non-Essential");
+bk("CH.11 · DR & BCP","Recovery Sites","What is a Hot Site?","A fully equipped facility ready for immediate use during a disaster");
+bk("CH.11 · DR & BCP","Recovery Sites","What is a Cold Site?","A basic facility with minimal equipment, requiring setup before use");
+bk("CH.11 · DR & BCP","DRP Contents","4 key contents of a DRP?","Emergency response procedures, Roles/responsibilities, Backup/recovery procedures, Communication/contacts");
+bk("CH.11 · DR & BCP","Backup Maintenance","3 elements of an up-to-date backup/recovery solution?","Maintenance, Auditing, Testing");
+bk("CH.11 · DR & BCP","DR Teams","4 disaster recovery teams?","Management/Executive, IT/Technical Recovery, Communications, Administrative/Logistics");
+bk("CH.11 · DR & BCP","Cost vs Time","Relationship between recovery time and solution cost?","Inverse — faster recovery needs higher investment; slower recovery costs less to set up but risks higher downtime losses");
+bk("CH.11 · DR & BCP","Disaster Types","2 broad categories of disasters?","Natural (floods, earthquakes) and Man-made/Technical (cyberattacks, power failures)");
+bk("CH.11 · DR & BCP","Planning Tools","What is an Inventory of Applications (IoA)?","A catalogue of all applications, their criticality, dependencies, and recovery priority");
+
+/* ---------- ENGINE ---------- */
+const CATS = {
+  all:{label:"All files", color:"var(--paper)"},
+  past:{label:"Past year", color:"var(--blue)"},
+  mcq:{label:"Mock MCQ", color:"var(--red)"},
+  short:{label:"Mock short answer", color:"var(--green)"},
+  struct:{label:"Mock structured", color:"var(--purple)"},
+  case:{label:"Mock case study", color:"var(--orange)"},
+  book:{label:"Exam prep book", color:"var(--cyan)"}
+};
+const catTagName = {past:"Past Year",mcq:"Mock · MCQ",short:"Mock · Short Answer",struct:"Mock · Structured",case:"Mock · Case Study",book:"Exam Prep Book"};
+
+let order = CARDS.map((_,i)=>i);
+let pos = 0;
+let flipped = false;
+let activeFilter = "all";
+let flaggedOnly = false;
+const starred = new Set();
+
+const filtersEl = document.getElementById('filters');
+Object.keys(CATS).forEach(key=>{
+  const b = document.createElement('button');
+  b.className = 'chip' + (key==='all' ? ' active':'');
+  b.dataset.cat = key;
+  b.textContent = CATS[key].label + (key!=='all' ? ` (${CARDS.filter(c=>c.cat===key).length})` : ` (${CARDS.length})`);
+  b.onclick = ()=>{ activeFilter = key; document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active')); b.classList.add('active'); rebuildOrder(); };
+  filtersEl.appendChild(b);
+});
+
+function currentPool(){
+  return CARDS.map((c,i)=>i).filter(i=>{
+    const c = CARDS[i];
+    if(activeFilter!=='all' && c.cat!==activeFilter) return false;
+    if(flaggedOnly && !starred.has(i)) return false;
+    return true;
+  });
+}
+function rebuildOrder(){
+  order = currentPool();
+  pos = 0; flipped = false;
+  render();
+}
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
+  return arr;
+}
+
+const cardEl = document.getElementById('card');
+const frontCat = document.getElementById('frontCat');
+const frontMarks = document.getElementById('frontMarks');
+const frontTag = document.getElementById('frontTag');
+const frontQ = document.getElementById('frontQ');
+const frontOpts = document.getElementById('frontOpts');
+const stripeEl = document.getElementById('stripeEl');
+const backBody = document.getElementById('backBody');
+const backId = document.getElementById('backId');
+const posLabel = document.getElementById('posLabel');
+const catLabel = document.getElementById('catLabel');
+const progressFill = document.getElementById('progressFill');
+const starBtn = document.getElementById('starBtn');
+const flagCount = document.getElementById('flagCount');
+
+function render(){
+  cardEl.classList.remove('flipped');
+  flipped = false;
+  if(order.length===0){
+    frontCat.textContent = "—"; frontMarks.textContent="";
+    frontTag.textContent = ""; frontQ.textContent = "No cards match this filter.";
+    frontOpts.innerHTML=""; stripeEl.style.setProperty('--stripe-color','#888');
+    backBody.innerHTML = "";
+    posLabel.textContent = "0 / 0";
+    progressFill.style.width = "0%";
+    return;
+  }
+  const idx = order[pos];
+  const c = CARDS[idx];
+  frontCat.textContent = catTagName[c.cat].toUpperCase();
+  frontMarks.textContent = c.marks.toUpperCase();
+  stripeEl.style.setProperty('--stripe-color', CATS[c.cat].color);
+  frontTag.textContent = "Q · " + (c.tag || catTagName[c.cat]);
+  frontQ.textContent = c.q;
+  if(c.opts){
+    frontOpts.innerHTML = c.opts.map((o,i)=>`<div>${String.fromCharCode(65+i)}) ${o}</div>`).join("");
+  } else {
+    frontOpts.innerHTML = "";
+  }
+  backBody.innerHTML = c.answerHtml + (c.tip ? `<div class="tip-box"><b>MUST MEMORISE —</b> ${c.tip}</div>` : "");
+  backId.textContent = "CARD " + String(pos+1).padStart(2,'0');
+  posLabel.textContent = (pos+1) + " / " + order.length;
+  catLabel.textContent = activeFilter==='all' ? "ALL FILES" : CATS[activeFilter].label.toUpperCase();
+  progressFill.style.width = ((pos+1)/order.length*100) + "%";
+  starBtn.classList.toggle('on', starred.has(idx));
+  flagCount.textContent = starred.size;
+}
+
+function flip(){ if(order.length===0) return; flipped = !flipped; cardEl.classList.toggle('flipped', flipped); }
+function next(){ if(order.length===0) return; pos = (pos+1) % order.length; flipped=false; render(); }
+function prev(){ if(order.length===0) return; pos = (pos-1+order.length) % order.length; flipped=false; render(); }
+
+let touchStartX=0, touchStartY=0, touchHandledAsSwipe=false;
+cardEl.addEventListener('touchstart', (e)=>{
+  const t = e.changedTouches[0];
+  touchStartX = t.clientX; touchStartY = t.clientY; touchHandledAsSwipe=false;
+}, {passive:true});
+cardEl.addEventListener('touchend', (e)=>{
+  const t = e.changedTouches[0];
+  const dx = t.clientX - touchStartX;
+  const dy = t.clientY - touchStartY;
+  if(Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5){
+    touchHandledAsSwipe = true;
+    if(dx < 0) next(); else prev();
+  }
+});
+cardEl.addEventListener('click', (e)=>{ if(touchHandledAsSwipe){ touchHandledAsSwipe=false; return; } flip(); });
+document.getElementById('flipBtn').addEventListener('click', flip);
+document.getElementById('nextBtn').addEventListener('click', next);
+document.getElementById('prevBtn').addEventListener('click', prev);
+document.getElementById('shuffleBtn').addEventListener('click', ()=>{ shuffle(order); pos=0; flipped=false; render(); });
+document.getElementById('resetBtn').addEventListener('click', ()=>{ rebuildOrder(); });
+document.getElementById('starBtn').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  const idx = order[pos];
+  if(starred.has(idx)) starred.delete(idx); else starred.add(idx);
+  render();
+});
+document.getElementById('flaggedBtn').addEventListener('click', (e)=>{
+  flaggedOnly = !flaggedOnly;
+  e.currentTarget.classList.toggle('active', flaggedOnly);
+  rebuildOrder();
+});
+document.addEventListener('keydown', (e)=>{
+  if(e.code==='Space'){ e.preventDefault(); flip(); }
+  else if(e.code==='ArrowRight'){ next(); }
+  else if(e.code==='ArrowLeft'){ prev(); }
+});
+
+rebuildOrder();
+</script>
+</body>
+</html>
